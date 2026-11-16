@@ -30,6 +30,8 @@ npm install
 npm test
 ```
 
+`npm test` runs the offline tests and then the end-to-end tests, which need internet. `npm run test:unit` runs only the offline ones.
+
 **Local (Claude Code / Claude Desktop):** the client starts the server itself.
 
 ```bash
@@ -58,6 +60,7 @@ Optional environment variables:
 A tool that fetches user-supplied URLs is a classic target, so:
 
 - **No internal requests (SSRF):** every hop of every redirect is resolved and refused if it points at a private, loopback, link-local, CGNAT or cloud-metadata address. Only `http`/`https` on ports 80, 443, 8080, 8443.
+- **Pinned addresses (DNS rebinding):** each hop's name is looked up once, and the connection goes to exactly the address that was checked. A DNS server cannot answer "public" for the check and "internal" for the request.
 - **No page content:** only the status code and `Location` header are read. Bodies are discarded.
 - **Bounded:** 6-second timeouts, at most 5 redirects, at most 5 links per message, input length limits.
 - **No storage:** nothing about requests is saved or logged. Rate limiting is in memory.
@@ -73,12 +76,11 @@ Please read these before relying on it.
 - Wikidata is community-edited and name searches can return a different organisation with a similar name.
 - Domain age is unavailable for registries without RDAP (including `.sg`).
 - Package checks read registry metadata only. The code inside a package is not scanned.
-- Known gap: a DNS-rebinding attack could change an address between the safety check and the request. Planned fix: pin the resolved address for the connection.
+- Links on unusual ports are not contacted at all (reported as `unusual_port`), so redirects and reachability are unknown for them.
 - The hosted mode has no authentication yet. Anyone with the URL can use it (within the rate limit).
 
 ## Roadmap
 
-- Pin resolved IPs (close the DNS-rebinding gap)
 - Larger, community-maintained brand list
 - More ecosystems (crates.io, Go modules, Docker Hub) and browser-extension IDs
 - OAuth and usage tiers for the hosted version

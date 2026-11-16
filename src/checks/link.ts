@@ -107,6 +107,15 @@ function verdictFrom(findings: Finding[], official: string | null): { verdict: V
   return { verdict: official ? 'known_official_domain' : 'no_red_flags', score };
 }
 
+/** Turns a "blocked: ..." error from the network guard into a finding that says what was actually blocked. */
+export function blockedFinding(error: string): Finding {
+  const port = error.match(/^blocked: port (\d+)/);
+  if (port) return { severity: 'low', code: 'unusual_port', detail: `The link (or one of its redirects) uses port ${port[1]}. LinkGuard only contacts normal web ports, so this site was not contacted. Public websites rarely use unusual ports.` };
+  const scheme = error.match(/^blocked: scheme (\S+)/);
+  if (scheme) return { severity: 'low', code: 'non_web_redirect', detail: `The link redirects to a "${scheme[1]}" address, which is not a web page (it may open an app or another program). LinkGuard did not follow it.` };
+  return { severity: 'high', code: 'internal_address', detail: `The link (or one of its redirects) points at a private or internal network address (${error}).` };
+}
+
 async function safeBrowsing(url: string): Promise<Finding | null> {
   const key = process.env.GSB_API_KEY;
   if (!key) return null;
@@ -145,7 +154,7 @@ export async function checkLink(raw: string, opts: { network?: boolean } = {}): 
     chain = c; age = a;
     if (gsb) findings.push(gsb);
     const last = chain[chain.length - 1];
-    if (last?.error?.startsWith('blocked')) findings.push({ severity: 'high', code: 'internal_address', detail: `The link (or one of its redirects) points at a private or internal network address (${last.error}).` });
+    if (last?.error?.startsWith('blocked')) findings.push(blockedFinding(last.error));
     else if (chain.length === 1 && last?.error) findings.push({ severity: 'info', code: 'unreachable', detail: `The site did not respond (${last.error}). It may be offline, taken down, or blocking automated checks.` });
     if (chain.length > 1 && last?.url) {
       const finalUrl = new URL(last.url);
