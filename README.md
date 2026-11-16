@@ -46,7 +46,11 @@ claude mcp add linkvouch -- node /absolute/path/to/linkvouch/src/stdio.ts
 npm start
 ```
 
-The endpoint is `POST /mcp` (stateless Streamable HTTP). On Render, Railway or Fly.io, set the start command to `npm start`; the server reads `PORT`. Then in Claude: Settings → Connectors → Add custom connector → `https://your-host/mcp`.
+The endpoint is `POST /mcp` (stateless Streamable HTTP), and `GET /healthz` answers `{"ok":true}` for health checks. The server reads `PORT`.
+
+To deploy on [Render](https://render.com), the repository includes a `render.yaml` Blueprint: in the Render Dashboard choose New → Blueprint and pick your copy of this repository. On Railway or Fly.io, set the start command to `npm start`.
+
+Then in Claude: Settings → Connectors → Add custom connector → `https://your-host/mcp`.
 
 Optional environment variables:
 
@@ -54,6 +58,8 @@ Optional environment variables:
 |---|---|
 | `PORT` | HTTP port (default 3000) |
 | `RATE_LIMIT_PER_MIN` | Requests per client IP per minute (default 60) |
+| `TRUST_PROXY_HOPS` | Number of reverse proxies in front of the server (default 1). Used to find the client IP for rate limiting. |
+| `REQUEST_TIMEOUT_MS` | Upper limit for one request in milliseconds (default 30000) |
 | `LINKVOUCH_CONTACT` | A URL added to the client name sent to public APIs (Wikimedia asks for this) |
 | `GSB_API_KEY` | Google Safe Browsing key, adds a blocklist check. The Safe Browsing API is for non-commercial use; use Google's Web Risk API for a paid service. |
 
@@ -64,7 +70,7 @@ A tool that fetches user-supplied URLs is a classic target, so:
 - **No internal requests (SSRF):** every hop of every redirect is resolved and refused if it points at a private, loopback, link-local, CGNAT or cloud-metadata address. Only `http`/`https` on ports 80, 443, 8080, 8443.
 - **Pinned addresses (DNS rebinding):** each hop's name is looked up once, and the connection goes to exactly the address that was checked. A DNS server cannot answer "public" for the check and "internal" for the request.
 - **No page content:** only the status code and `Location` header are read. Bodies are discarded.
-- **Bounded:** 6-second timeouts, at most 5 redirects, at most 5 links per message, input length limits.
+- **Bounded:** 6 seconds per redirect hop and 15 seconds per redirect chain, at most 5 redirects, at most 5 links per message, input length limits, and (hosted) 30 seconds per request.
 - **No storage:** nothing about requests is saved or logged. Rate limiting is in memory.
 - **Read-only tools:** all tools are marked read-only.
 
@@ -80,6 +86,8 @@ Please read these before relying on it.
 - Package checks read registry metadata only. The code inside a package is not scanned.
 - Links on unusual ports are not contacted at all (reported as `unusual_port`), so redirects and reachability are unknown for them.
 - The hosted mode has no authentication yet. Anyone with the URL can use it (within the rate limit).
+- The rate limit is per IP address. Clients that reach the server through a shared service share one limit, and `TRUST_PROXY_HOPS` must match the host's setup for the limit to see the right address.
+- On a free hosting plan the server sleeps when idle. On Render's free plan the first request after 15 idle minutes takes about a minute, which can be longer than a client is willing to wait.
 
 ## Roadmap
 

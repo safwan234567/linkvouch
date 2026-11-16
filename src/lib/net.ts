@@ -32,6 +32,7 @@ export type Resolver = (host: string) => Promise<Address[]>;
 const dnsResolver: Resolver = (host) => lookup(host, { all: true });
 
 const HOP_TIMEOUT_MS = 6000;
+const CHAIN_TIMEOUT_MS = 15000;
 
 /** Rejects when the signal fires, so a slow DNS lookup cannot outlive the hop's time limit. */
 function withDeadline<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
@@ -87,13 +88,14 @@ export type Hop = { url: string; status: number | null; error?: string };
 /** Follows redirects by hand (max 5), re-validating every hop and pinning its checked address. Never reads a body. */
 export async function followRedirects(start: string, maxHops = 5, resolve: Resolver = dnsResolver): Promise<Hop[]> {
   const chain: Hop[] = [];
+  const whole = AbortSignal.timeout(CHAIN_TIMEOUT_MS); // limit for the whole chain, on top of the per-hop limit
   let current = start;
   for (let i = 0; i <= maxHops; i++) {
     let u: URL;
     try { u = new URL(current); } catch { chain.push({ url: current, status: null, error: 'invalid URL' }); break; }
     u.username = ''; u.password = '';
     try {
-      const signal = AbortSignal.timeout(HOP_TIMEOUT_MS);
+      const signal = AbortSignal.any([AbortSignal.timeout(HOP_TIMEOUT_MS), whole]);
       const pinned = await withDeadline(assertPublicUrl(u, resolve), signal);
       const res = await probe(u, pinned, signal);
       chain.push({ url: u.href, status: res.status });

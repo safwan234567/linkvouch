@@ -1,0 +1,14 @@
+# Render Blueprint: describes how to run LinkVouch on render.com.
+# In the Render Dashboard choose New > Blueprint and pick this repository.
+services:
+  - type: web
+    name: linkvouch
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: LINKVOUCH_CONTACT
+        value: https://github.com/safwan234567/linkvouch
