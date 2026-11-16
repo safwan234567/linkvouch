@@ -37,7 +37,7 @@ async function wikidata(name: string): Promise<OfficialCandidate[]> {
 export async function verifyOfficialSite(name: string, url?: string): Promise<OfficialReport> {
   const candidates: OfficialCandidate[] = [];
   const local = findBrandByName(name);
-  if (local) candidates.push({ name: local.name, description: null, official_domains: local.domains, source: 'LinkGuard built-in brand list' });
+  if (local) candidates.push({ name: local.name, description: null, official_domains: local.domains, source: 'LinkVouch built-in brand list' });
   let wikidataFailed = false;
   try { candidates.push(...await wikidata(name)); } catch { wikidataFailed = true; }
 

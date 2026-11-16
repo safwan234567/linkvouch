@@ -4,7 +4,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { isPrivateAddress } from '../src/lib/net.ts';
 
-const client = new Client({ name: 'linkguard-smoke', version: '0.0.0' });
+const client = new Client({ name: 'linkvouch-smoke', version: '0.0.0' });
 await client.connect(new StdioClientTransport({ command: process.execPath, args: ['src/stdio.ts'], stderr: 'ignore' }));
 
 let failed = 0;
@@ -54,7 +54,7 @@ expect('official: Wikidata lookup (Firefox)', JSON.stringify(o3.candidates.map((
 // ---- packages
 const p1 = await call('check_package', { ecosystem: 'npm', name: 'react' });
 expect('package: npm react', p1.verdict, p1.exists === true && p1.verdict === 'no_red_flags', `dl/wk=${p1.weekly_downloads} age=${p1.age_days}`);
-const p2 = await call('check_package', { ecosystem: 'npm', name: 'linkguard-totally-made-up-pkg-93417' });
+const p2 = await call('check_package', { ecosystem: 'npm', name: 'linkvouch-totally-made-up-pkg-93417' });
 expect('package: hallucinated npm name', p2.verdict, p2.exists === false && p2.verdict === 'high_risk');
 const p3 = await call('check_package', { ecosystem: 'pypi', name: 'requests' });
 expect('package: pypi requests', p3.verdict, p3.exists === true && p3.verdict === 'no_red_flags', `dl/wk=${p3.weekly_downloads} age=${p3.age_days}`);
@@ -68,7 +68,7 @@ const v2 = await call('vet_ai_recommendation', { item: 'https://github.com/login
 expect('vet: real GitHub login', v2.ok_to_recommend, v2.ok_to_recommend === true, v2.summary.slice(0, 90));
 const v3 = await call('vet_ai_recommendation', { item: '+1 888 555 0199', claimed_brand: 'PayPal' });
 expect('vet: support phone number', v3.ok_to_recommend, v3.kind === 'phone' && v3.ok_to_recommend === false);
-const v4 = await call('vet_ai_recommendation', { item: 'linkguard-totally-made-up-pkg-93417', ecosystem: 'npm' });
+const v4 = await call('vet_ai_recommendation', { item: 'linkvouch-totally-made-up-pkg-93417', ecosystem: 'npm' });
 expect('vet: hallucinated package', v4.ok_to_recommend, v4.ok_to_recommend === false);
 
 // ---- SSRF guard (unit)

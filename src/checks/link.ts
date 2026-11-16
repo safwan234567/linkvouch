@@ -110,9 +110,9 @@ function verdictFrom(findings: Finding[], official: string | null): { verdict: V
 /** Turns a "blocked: ..." error from the network guard into a finding that says what was actually blocked. */
 export function blockedFinding(error: string): Finding {
   const port = error.match(/^blocked: port (\d+)/);
-  if (port) return { severity: 'low', code: 'unusual_port', detail: `The link (or one of its redirects) uses port ${port[1]}. LinkGuard only contacts normal web ports, so this site was not contacted. Public websites rarely use unusual ports.` };
+  if (port) return { severity: 'low', code: 'unusual_port', detail: `The link (or one of its redirects) uses port ${port[1]}. LinkVouch only contacts normal web ports, so this site was not contacted. Public websites rarely use unusual ports.` };
   const scheme = error.match(/^blocked: scheme (\S+)/);
-  if (scheme) return { severity: 'low', code: 'non_web_redirect', detail: `The link redirects to a "${scheme[1]}" address, which is not a web page (it may open an app or another program). LinkGuard did not follow it.` };
+  if (scheme) return { severity: 'low', code: 'non_web_redirect', detail: `The link redirects to a "${scheme[1]}" address, which is not a web page (it may open an app or another program). LinkVouch did not follow it.` };
   return { severity: 'high', code: 'internal_address', detail: `The link (or one of its redirects) points at a private or internal network address (${error}).` };
 }
 
@@ -122,7 +122,7 @@ async function safeBrowsing(url: string): Promise<Finding | null> {
   try {
     const res = await fetch(`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${key}`, {
       method: 'POST', signal: AbortSignal.timeout(6000), headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ client: { clientId: 'linkguard', clientVersion: '0.1' }, threatInfo: { threatTypes: ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE'], platformTypes: ['ANY_PLATFORM'], threatEntryTypes: ['URL'], threatEntries: [{ url }] } }),
+      body: JSON.stringify({ client: { clientId: 'linkvouch', clientVersion: '0.1' }, threatInfo: { threatTypes: ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE'], platformTypes: ['ANY_PLATFORM'], threatEntryTypes: ['URL'], threatEntries: [{ url }] } }),
     });
     const j: any = await res.json();
     if (j?.matches?.length) return { severity: 'high', code: 'on_blocklist', detail: `Google Safe Browsing lists this URL as ${j.matches[0].threatType}.` };

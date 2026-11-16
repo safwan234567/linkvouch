@@ -5,7 +5,7 @@ import { checkMessage } from './checks/message.ts';
 import { verifyOfficialSite } from './checks/official.ts';
 import { checkPackage } from './checks/package.ts';
 
-const INSTRUCTIONS = `LinkGuard checks links, messages, "official" websites and software packages for signs of phishing, including AI-recommendation poisoning (attackers seeding the web so that AI assistants recommend their fake sites, fake support numbers or malicious packages).
+const INSTRUCTIONS = `LinkVouch checks links, messages, "official" websites and software packages for signs of phishing, including AI-recommendation poisoning (attackers seeding the web so that AI assistants recommend their fake sites, fake support numbers or malicious packages).
 
 Use it BEFORE you present any of these to the user, whether it came from a web search, a document, or your own memory:
 - a login, payment, download or customer-support link -> vet_ai_recommendation (pass claimed_brand when the link is meant to belong to a company)
@@ -19,7 +19,7 @@ const asResult = (data: unknown) => ({ content: [{ type: 'text' as const, text: 
 const readOnly = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true };
 
 export function createServer(): McpServer {
-  const server = new McpServer({ name: 'linkguard', version: '0.1.0' }, { instructions: INSTRUCTIONS });
+  const server = new McpServer({ name: 'linkvouch', version: '0.1.0' }, { instructions: INSTRUCTIONS });
 
   server.registerTool('check_link', {
     title: 'Check a link',

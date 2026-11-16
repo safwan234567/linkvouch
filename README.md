@@ -1,10 +1,10 @@
-# LinkGuard
+# LinkVouch
 
-[![CI](https://github.com/safwan234567/linkguard/actions/workflows/ci.yml/badge.svg)](https://github.com/safwan234567/linkguard/actions/workflows/ci.yml)
+[![CI](https://github.com/safwan234567/linkvouch/actions/workflows/ci.yml/badge.svg)](https://github.com/safwan234567/linkvouch/actions/workflows/ci.yml)
 
 An MCP connector that lets Claude (or any MCP client) check links, scam messages, "official" websites and software packages **before** recommending them.
 
-It was built for one problem in particular: **AI-recommendation poisoning**. Attackers plant content so that AI assistants recommend their fake login pages, fake support numbers, or malicious packages with invented names ("slopsquatting"). LinkGuard gives the assistant a way to check first.
+It was built for one problem in particular: **AI-recommendation poisoning**. Attackers plant content so that AI assistants recommend their fake login pages, fake support numbers, or malicious packages with invented names ("slopsquatting"). LinkVouch gives the assistant a way to check first.
 
 > Status: early version (0.1). Heuristics, not a guarantee. See [Limits](#limits).
 
@@ -37,7 +37,7 @@ npm test
 **Local (Claude Code / Claude Desktop):** the client starts the server itself.
 
 ```bash
-claude mcp add linkguard -- node /absolute/path/to/linkguard/src/stdio.ts
+claude mcp add linkvouch -- node /absolute/path/to/linkvouch/src/stdio.ts
 ```
 
 **Hosted (Claude custom connector):** run the HTTP server somewhere public with HTTPS.
@@ -54,7 +54,7 @@ Optional environment variables:
 |---|---|
 | `PORT` | HTTP port (default 3000) |
 | `RATE_LIMIT_PER_MIN` | Requests per client IP per minute (default 60) |
-| `LINKGUARD_CONTACT` | A URL added to the client name sent to public APIs (Wikimedia asks for this) |
+| `LINKVOUCH_CONTACT` | A URL added to the client name sent to public APIs (Wikimedia asks for this) |
 | `GSB_API_KEY` | Google Safe Browsing key, adds a blocklist check. The Safe Browsing API is for non-commercial use; use Google's Web Risk API for a paid service. |
 
 ## How it stays safe itself
@@ -90,7 +90,7 @@ Please read these before relying on it.
 
 ## Responsible use
 
-LinkGuard only looks at public information (DNS, RDAP, HTTP status, public registries). Do not point it at systems you have no reason to check, and report real scams to the proper channel (in Singapore: ScamShield, 1799).
+LinkVouch only looks at public information (DNS, RDAP, HTTP status, public registries). Do not point it at systems you have no reason to check, and report real scams to the proper channel (in Singapore: ScamShield, 1799).
 
 ## Licence
 

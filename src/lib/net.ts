@@ -5,7 +5,7 @@ import https from 'node:https';
 import { BlockList, isIP } from 'node:net';
 import { lookup } from 'node:dns/promises';
 
-const UA = 'Mozilla/5.0 (compatible; LinkGuard/0.1; link-safety-checker)';
+const UA = 'Mozilla/5.0 (compatible; LinkVouch/0.1; link-safety-checker)';
 const ALLOWED_PORTS = new Set(['', '80', '443', '8080', '8443']);
 
 const blocked = new BlockList();
@@ -106,8 +106,8 @@ export async function followRedirects(start: string, maxHops = 5, resolve: Resol
   return chain;
 }
 
-// Public APIs (Wikimedia in particular) ask for a descriptive client name. Set LINKGUARD_CONTACT to your repo URL when hosting.
-const API_UA = `LinkGuard/0.1 (open-source MCP link-safety checker${process.env.LINKGUARD_CONTACT ? '; ' + process.env.LINKGUARD_CONTACT : ''})`;
+// Public APIs (Wikimedia in particular) ask for a descriptive client name. Set LINKVOUCH_CONTACT to your repo URL when hosting.
+const API_UA = `LinkVouch/0.1 (open-source MCP link-safety checker${process.env.LINKVOUCH_CONTACT ? '; ' + process.env.LINKVOUCH_CONTACT : ''})`;
 const cache = new Map<string, { at: number; value: any }>();
 const CACHE_MS = 60 * 60 * 1000;
 

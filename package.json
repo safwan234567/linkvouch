@@ -1,5 +1,5 @@
 {
-  "name": "linkguard",
+  "name": "linkvouch",
   "version": "0.1.0",
   "description": "MCP connector that checks links, scam messages, official sites and packages, incl. AI-recommendation poisoning",
   "main": "src/http.ts",

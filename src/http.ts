@@ -38,7 +38,7 @@ const notAllowed = (_req: express.Request, res: express.Response) => { res.statu
 app.get('/mcp', notAllowed);
 app.delete('/mcp', notAllowed);
 
-app.get('/', (_req, res) => { res.type('text/plain').send('LinkGuard MCP server. Connect an MCP client to POST /mcp.\n'); });
+app.get('/', (_req, res) => { res.type('text/plain').send('LinkVouch MCP server. Connect an MCP client to POST /mcp.\n'); });
 app.get('/healthz', (_req, res) => { res.json({ ok: true }); });
 
-app.listen(PORT, () => console.log(`LinkGuard listening on http://localhost:${PORT}/mcp`));
+app.listen(PORT, () => console.log(`LinkVouch listening on http://localhost:${PORT}/mcp`));
