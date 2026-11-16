@@ -7,7 +7,9 @@
     "start": "node src/http.ts",
     "stdio": "node src/stdio.ts",
     "test": "node test/unit.ts && node test/smoke.ts",
-    "test:unit": "node test/unit.ts"
+    "test:unit": "node test/unit.ts",
+    "test:e2e": "node test/smoke.ts",
+    "typecheck": "tsc"
   },
   "keywords": [
     "mcp",

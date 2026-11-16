@@ -1,5 +1,7 @@
 # LinkGuard
 
+[![CI](https://github.com/safwan234567/linkguard/actions/workflows/ci.yml/badge.svg)](https://github.com/safwan234567/linkguard/actions/workflows/ci.yml)
+
 An MCP connector that lets Claude (or any MCP client) check links, scam messages, "official" websites and software packages **before** recommending them.
 
 It was built for one problem in particular: **AI-recommendation poisoning**. Attackers plant content so that AI assistants recommend their fake login pages, fake support numbers, or malicious packages with invented names ("slopsquatting"). LinkGuard gives the assistant a way to check first.
@@ -30,7 +32,7 @@ npm install
 npm test
 ```
 
-`npm test` runs the offline tests and then the end-to-end tests, which need internet. `npm run test:unit` runs only the offline ones.
+`npm test` runs the offline tests and then the end-to-end tests, which need internet. `npm run test:unit` runs only the offline ones. `npm run typecheck` checks the TypeScript types. GitHub Actions runs all three on every push and pull request.
 
 **Local (Claude Code / Claude Desktop):** the client starts the server itself.
 
