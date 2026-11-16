@@ -1,5 +1,7 @@
 // Network helpers with SSRF protection. User-supplied URLs are only ever probed
 // (status + Location header); response bodies are never downloaded.
+import http from 'node:http';
+import https from 'node:https';
 import { BlockList, isIP } from 'node:net';
 import { lookup } from 'node:dns/promises';
 
@@ -25,24 +27,65 @@ export function isPrivateAddress(ip: string): boolean {
   return blocked.check(addr, fam === 4 ? 'ipv4' : 'ipv6');
 }
 
-/** Throws unless the URL is http(s), on a normal web port, and resolves only to public addresses. */
-export async function assertPublicUrl(u: URL): Promise<void> {
+export type Address = { address: string; family: number };
+export type Resolver = (host: string) => Promise<Address[]>;
+const dnsResolver: Resolver = (host) => lookup(host, { all: true });
+
+const HOP_TIMEOUT_MS = 6000;
+
+/** Rejects when the signal fires, so a slow DNS lookup cannot outlive the hop's time limit. */
+function withDeadline<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise((resolve, reject) => {
+    signal.addEventListener('abort', () => reject(new Error('timed out')), { once: true });
+    p.then(resolve, reject);
+  });
+}
+
+/**
+ * Throws unless the URL is http(s), on a normal web port, and resolves only to public addresses.
+ * Returns the addresses that were checked. The caller must connect to exactly these (see probe),
+ * never look the name up again: a second lookup could return a different, internal address (DNS rebinding).
+ */
+export async function assertPublicUrl(u: URL, resolve: Resolver = dnsResolver): Promise<Address[]> {
   if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error(`blocked: scheme ${u.protocol}`);
   if (!ALLOWED_PORTS.has(u.port)) throw new Error(`blocked: port ${u.port}`);
   const host = u.hostname.replace(/^\[|\]$/g, '');
-  if (isIP(host)) {
+  const fam = isIP(host);
+  if (fam) {
     if (isPrivateAddress(host)) throw new Error('blocked: private or reserved address');
-    return;
+    return [{ address: host, family: fam }];
   }
-  const addrs = await lookup(host, { all: true });
+  const addrs = await resolve(host);
   if (!addrs.length) throw new Error('could not resolve host');
   if (addrs.some((a) => isPrivateAddress(a.address))) throw new Error('blocked: resolves to a private or reserved address');
+  return addrs;
+}
+
+/**
+ * One GET to the URL, connecting only to the given (already checked) addresses. The hostname is still
+ * used for the Host header and for HTTPS certificate checks. Reads the status and Location header, never the body.
+ */
+export function probe(u: URL, pinned: Address[], signal: AbortSignal): Promise<{ status: number; location: string | null }> {
+  return new Promise((resolve, reject) => {
+    // Node asks this function for the address instead of doing its own DNS lookup.
+    const pinnedLookup = (_host: string, opts: any, cb: any) => (opts?.all ? cb(null, pinned) : cb(null, pinned[0].address, pinned[0].family));
+    const req = (u.protocol === 'https:' ? https : http).request(u, {
+      method: 'GET', agent: false, lookup: pinnedLookup, signal,
+      headers: { 'user-agent': UA, accept: 'text/html,*/*;q=0.5' },
+    }, (res) => {
+      const loc = res.headers.location;
+      resolve({ status: res.statusCode ?? 0, location: typeof loc === 'string' ? loc : null });
+      res.destroy(); // discard the body
+    });
+    req.on('error', reject);
+    req.end();
+  });
 }
 
 export type Hop = { url: string; status: number | null; error?: string };
 
-/** Follows redirects by hand (max 5), re-validating every hop. Never reads a body. */
-export async function followRedirects(start: string, maxHops = 5): Promise<Hop[]> {
+/** Follows redirects by hand (max 5), re-validating every hop and pinning its checked address. Never reads a body. */
+export async function followRedirects(start: string, maxHops = 5, resolve: Resolver = dnsResolver): Promise<Hop[]> {
   const chain: Hop[] = [];
   let current = start;
   for (let i = 0; i <= maxHops; i++) {
@@ -50,12 +93,11 @@ export async function followRedirects(start: string, maxHops = 5): Promise<Hop[]
     try { u = new URL(current); } catch { chain.push({ url: current, status: null, error: 'invalid URL' }); break; }
     u.username = ''; u.password = '';
     try {
-      await assertPublicUrl(u);
-      const res = await fetch(u, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(6000), headers: { 'user-agent': UA, accept: 'text/html,*/*;q=0.5' } });
-      res.body?.cancel().catch(() => {});
+      const signal = AbortSignal.timeout(HOP_TIMEOUT_MS);
+      const pinned = await withDeadline(assertPublicUrl(u, resolve), signal);
+      const res = await probe(u, pinned, signal);
       chain.push({ url: u.href, status: res.status });
-      const loc = res.headers.get('location');
-      if (res.status >= 300 && res.status < 400 && loc) { current = new URL(loc, u).href; continue; }
+      if (res.status >= 300 && res.status < 400 && res.location) { current = new URL(res.location, u).href; continue; }
     } catch (e) {
       chain.push({ url: u.href, status: null, error: e instanceof Error ? e.message : String(e) });
     }
